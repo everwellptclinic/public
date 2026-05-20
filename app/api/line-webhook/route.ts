@@ -49,16 +49,25 @@ const IMAGES = {
 // ─── 主要 Webhook 入口 ────────────────────────────────────────
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  for (const event of body.events || []) {
-    const userId = event.source?.userId
-    if (!userId) continue
-    if (event.type === 'message' && event.message?.type === 'text') {
-      await handleText(userId, event.message.text.trim(), event.replyToken)
+
+  // 立即回應 200，事件在背景處理（避免 LINE 重試導致重複訊息）
+  ;(async () => {
+    for (const event of body.events || []) {
+      const userId = event.source?.userId
+      if (!userId) continue
+      try {
+        if (event.type === 'message' && event.message?.type === 'text') {
+          await handleText(userId, event.message.text.trim(), event.replyToken)
+        }
+        if (event.type === 'postback') {
+          await handlePostback(userId, event.postback?.data, event.replyToken)
+        }
+      } catch (e) {
+        console.error('Event handler error:', e)
+      }
     }
-    if (event.type === 'postback') {
-      await handlePostback(userId, event.postback?.data, event.replyToken)
-    }
-  }
+  })()
+
   return NextResponse.json({ status: 'ok' })
 }
 
