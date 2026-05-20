@@ -1,5 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { after } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { getSession, setSession, clearSession } from '@/lib/sessions'
 import { getAvailableSlots, getUpcomingDates, createAppointment } from '@/lib/calendar'
 
