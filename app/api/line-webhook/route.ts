@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { after } from 'next/server'
 import { getSession, setSession, clearSession } from '@/lib/sessions'
 import { getAvailableSlots, getUpcomingDates, createAppointment } from '@/lib/calendar'
 
@@ -50,8 +51,8 @@ const IMAGES = {
 export async function POST(req: NextRequest) {
   const body = await req.json()
 
-  // 立即回應 200，事件在背景處理（避免 LINE 重試導致重複訊息）
-  ;(async () => {
+  // 立即回應 200，事件用 after() 在背景處理（避免 LINE 重試導致重複訊息）
+  after(async () => {
     for (const event of body.events || []) {
       const userId = event.source?.userId
       if (!userId) continue
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
         console.error('Event handler error:', e)
       }
     }
-  })()
+  })
 
   return NextResponse.json({ status: 'ok' })
 }
