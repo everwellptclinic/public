@@ -96,7 +96,9 @@ async function handleText(userId: string, text: string, replyToken: string) {
 
   // 圖文選單：收費標準
   if (text === '收費標準') {
-    await replyImages(replyToken, IMAGES.pricing)
+    await replyMessages(replyToken, [
+      imageCarouselMessage('收費標準', IMAGES.pricing),
+    ])
     return
   }
 
