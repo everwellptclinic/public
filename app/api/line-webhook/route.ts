@@ -107,20 +107,15 @@ async function handleText(userId: string, text: string, replyToken: string) {
   }
 
   // 圖文選單：治療項目（治療方式 + 適應症）
+  // 全部用 reply 一次送完（5 則訊息）= 0 push 配額
   if (text === '治療項目') {
-    // Reply：文字 + 治療方式前4張（共5則）
-    await replyTextAndImages(replyToken,
-      '以下是我們的治療方式介紹 👇',
-      IMAGES.treatments.slice(0, 4)
-    )
-    // Push：治療方式第5-6張
-    await pushImages(userId, IMAGES.treatments.slice(4))
-    // Push：適應症標題
-    await pushText(userId, '以下是我們常見的適應症 👇')
-    // Push：適應症圖卡分三批
-    await pushImages(userId, IMAGES.conditions.slice(0, 5))
-    await pushImages(userId, IMAGES.conditions.slice(5, 10))
-    await pushImages(userId, IMAGES.conditions.slice(10))
+    await replyMessages(replyToken, [
+      textMessage('以下是我們的治療方式介紹 👇'),
+      imageCarouselMessage('治療方式', IMAGES.treatments),                // 最多 10 張
+      textMessage('以下是我們常見的適應症 👇'),
+      imageCarouselMessage('常見適應症 (1/2)', IMAGES.conditions.slice(0, 10)),
+      imageCarouselMessage('常見適應症 (2/2)', IMAGES.conditions.slice(10)),
+    ])
     return
   }
 
@@ -229,6 +224,31 @@ async function handlePostback(userId: string, data: string, replyToken: string) 
 }
 
 // ─── LINE API 工具函式 ────────────────────────────────────────
+
+// 通用：傳送多則訊息（reply 最多 5 則）
+async function replyMessages(replyToken: string, messages: object[]) {
+  await callLine('reply', { replyToken, messages: messages.slice(0, 5) })
+}
+
+// 訊息建構：純文字
+function textMessage(text: string) {
+  return { type: 'text', text }
+}
+
+// 訊息建構：Image Carousel（單則訊息塞最多 10 張圖）
+function imageCarouselMessage(altText: string, urls: string[]) {
+  return {
+    type: 'template',
+    altText: altText.slice(0, 400),
+    template: {
+      type: 'image_carousel',
+      columns: urls.slice(0, 10).map(url => ({
+        imageUrl: url,
+        action: { type: 'uri', label: '檢視', uri: url },
+      })),
+    },
+  }
+}
 
 async function reply(replyToken: string, text: string) {
   await callLine('reply', { replyToken, messages: [{ type: 'text', text }] })
