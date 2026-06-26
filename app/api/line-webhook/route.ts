@@ -81,15 +81,25 @@ async function handleText(userId: string, text: string, replyToken: string) {
     return
   }
 
-  // 手動觸發明日預約提醒
+  // 查詢明日預約名單
   if (text === '明日預約') {
-    const res = await fetch(`${BASE_URL}/api/reminder`)
-    const data = await res.json()
-    if (data.count === 0) {
-      await reply(replyToken, '明天目前無預約 🙌')
-    } else {
-      await reply(replyToken, `已發送明天 ${data.count} 筆預約提醒 ✅`)
+    const { getTomorrowAppointments } = await import('@/lib/calendar')
+    const appointments = await getTomorrowAppointments()
+
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const m = tomorrow.getMonth() + 1
+    const d = tomorrow.getDate()
+    const dayLabels = ['日', '一', '二', '三', '四', '五', '六']
+    const dateStr = `${m}/${d}（${dayLabels[tomorrow.getDay()]}）`
+
+    if (appointments.length === 0) {
+      await reply(replyToken, `📅 明天 ${dateStr}\n\n目前無預約 🙌`)
+      return
     }
+
+    const lines = appointments.map(a => `${a.time}　${a.patient}　${a.therapist}治療師`)
+    await reply(replyToken, `📅 明天 ${dateStr} 共 ${appointments.length} 筆\n\n${lines.join('\n')}`)
     return
   }
 
