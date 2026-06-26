@@ -107,21 +107,43 @@ function parseSummary(summary: string): { patient: string; therapist: string } |
   return { patient: match[1].trim(), therapist: match[2].trim() }
 }
 
+// 以台灣時區取得明天的日期字串，例如 "6/27（五）"
+export function getTomorrowDateStr(): string {
+  const now = new Date()
+  const tpe = new Date(now.getTime() + 8 * 60 * 60 * 1000)
+  const tomorrow = new Date(Date.UTC(tpe.getUTCFullYear(), tpe.getUTCMonth(), tpe.getUTCDate() + 1))
+  const m = tomorrow.getUTCMonth() + 1
+  const d = tomorrow.getUTCDate()
+  const dayLabels = ['日', '一', '二', '三', '四', '五', '六']
+  const dow = tomorrow.getUTCDay()
+  return `${m}/${d}（${dayLabels[dow]}）`
+}
+
+// 以台灣時區取得明天的日期範圍
+function getTomorrowRangeTaipei(): { timeMin: string; timeMax: string } {
+  const now = new Date()
+  // 台灣時區 offset = UTC+8
+  const tpe = new Date(now.getTime() + 8 * 60 * 60 * 1000)
+  // 明天 00:00:00 台灣時間
+  const tomorrowStart = new Date(Date.UTC(
+    tpe.getUTCFullYear(), tpe.getUTCMonth(), tpe.getUTCDate() + 1,
+    0, 0, 0
+  ) - 8 * 60 * 60 * 1000)
+  const tomorrowEnd = new Date(tomorrowStart.getTime() + 24 * 60 * 60 * 1000 - 1)
+  return { timeMin: tomorrowStart.toISOString(), timeMax: tomorrowEnd.toISOString() }
+}
+
 // ─── 取得明天的所有預約事件 ──────────────────────────────────
 export async function getTomorrowAppointments(): Promise<Appointment[]> {
   const auth = getAuth()
   const calendar = google.calendar({ version: 'v3', auth })
 
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  tomorrow.setHours(0, 0, 0, 0)
-  const dayEnd = new Date(tomorrow)
-  dayEnd.setHours(23, 59, 59, 999)
+  const { timeMin, timeMax } = getTomorrowRangeTaipei()
 
   const { data } = await calendar.events.list({
     calendarId: process.env.GOOGLE_CALENDAR_ID!,
-    timeMin: tomorrow.toISOString(),
-    timeMax: dayEnd.toISOString(),
+    timeMin,
+    timeMax,
     singleEvents: true,
     orderBy: 'startTime',
     timeZone: 'Asia/Taipei',
@@ -133,10 +155,15 @@ export async function getTomorrowAppointments(): Promise<Appointment[]> {
     const parsed = parseSummary(e.summary || '')
     if (!parsed) continue
 
+    // 用 toLocaleString 以台灣時區取得正確時間
     const dt = new Date(e.start.dateTime)
-    const hh = String(dt.getHours()).padStart(2, '0')
-    const mm = String(dt.getMinutes()).padStart(2, '0')
-    results.push({ ...parsed, time: `${hh}:${mm}` })
+    const timeStr = dt.toLocaleTimeString('zh-TW', {
+      timeZone: 'Asia/Taipei',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
+    results.push({ ...parsed, time: timeStr })
   }
   return results
 }

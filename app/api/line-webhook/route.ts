@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse, after } from 'next/server'
 import { getSession, setSession, clearSession } from '@/lib/sessions'
-import { getAvailableSlots, getUpcomingDates, createAppointment } from '@/lib/calendar'
+import { getAvailableSlots, getUpcomingDates, createAppointment, getTomorrowAppointments, getTomorrowDateStr } from '@/lib/calendar'
 
 // ─── 設定區 ───────────────────────────────────────────────────
 const CLINIC_NAME = '恆好物理治療所'
@@ -83,15 +83,8 @@ async function handleText(userId: string, text: string, replyToken: string) {
 
   // 查詢明日預約名單
   if (text === '明日預約') {
-    const { getTomorrowAppointments } = await import('@/lib/calendar')
     const appointments = await getTomorrowAppointments()
-
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    const m = tomorrow.getMonth() + 1
-    const d = tomorrow.getDate()
-    const dayLabels = ['日', '一', '二', '三', '四', '五', '六']
-    const dateStr = `${m}/${d}（${dayLabels[tomorrow.getDay()]}）`
+    const dateStr = getTomorrowDateStr()
 
     if (appointments.length === 0) {
       await reply(replyToken, `📅 明天 ${dateStr}\n\n目前無預約 🙌`)

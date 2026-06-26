@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getTomorrowAppointments } from '@/lib/calendar'
+import { getTomorrowAppointments, getTomorrowDateStr } from '@/lib/calendar'
 
 const LINE_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN!
 const OWNER_LINE_ID = process.env.OWNER_LINE_ID!
@@ -15,13 +15,7 @@ export async function GET(req: NextRequest) {
   }
 
   const appointments = await getTomorrowAppointments()
-
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const m = tomorrow.getMonth() + 1
-  const d = tomorrow.getDate()
-  const dayLabels = ['日', '一', '二', '三', '四', '五', '六']
-  const dateStr = `${m}/${d}（${dayLabels[tomorrow.getDay()]}）`
+  const dateStr = getTomorrowDateStr()
 
   if (appointments.length === 0) {
     await pushText(OWNER_LINE_ID, `📅 明天 ${dateStr} 目前無預約`)
