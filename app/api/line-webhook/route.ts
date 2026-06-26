@@ -82,7 +82,7 @@ async function handleText(userId: string, text: string, replyToken: string) {
   }
 
   // 查詢明日預約名單
-  if (text === '明日預約') {
+  if (text === '明日預約名單') {
     const appointments = await getTomorrowAppointments()
     const dateStr = getTomorrowDateStr()
 
