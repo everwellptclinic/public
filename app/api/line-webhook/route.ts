@@ -75,6 +75,12 @@ export async function POST(req: NextRequest) {
 async function handleText(userId: string, text: string, replyToken: string) {
   const session = getSession(userId)
 
+  // 查詢自己的 LINE ID
+  if (text === '我的ID') {
+    await reply(replyToken, `您的 LINE ID：\n${userId}`)
+    return
+  }
+
   // 圖文選單：預約
   if (text === '預約') {
     setSession(userId, { step: 'AWAITING_APPOINTMENT_TYPE' })

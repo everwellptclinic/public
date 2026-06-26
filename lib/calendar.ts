@@ -94,6 +94,53 @@ export function getUpcomingDates(days = 7): { label: string; date: Date }[] {
   return result
 }
 
+export interface Appointment {
+  patient: string
+  therapist: string
+  time: string   // 'HH:MM'
+}
+
+// 解析 "[預約] 患者姓名 - 治療師姓名" 格式
+function parseSummary(summary: string): { patient: string; therapist: string } | null {
+  const match = summary.match(/^\[預約\]\s*(.+?)\s*[-–]\s*(.+)$/)
+  if (!match) return null
+  return { patient: match[1].trim(), therapist: match[2].trim() }
+}
+
+// ─── 取得明天的所有預約事件 ──────────────────────────────────
+export async function getTomorrowAppointments(): Promise<Appointment[]> {
+  const auth = getAuth()
+  const calendar = google.calendar({ version: 'v3', auth })
+
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  tomorrow.setHours(0, 0, 0, 0)
+  const dayEnd = new Date(tomorrow)
+  dayEnd.setHours(23, 59, 59, 999)
+
+  const { data } = await calendar.events.list({
+    calendarId: process.env.GOOGLE_CALENDAR_ID!,
+    timeMin: tomorrow.toISOString(),
+    timeMax: dayEnd.toISOString(),
+    singleEvents: true,
+    orderBy: 'startTime',
+    timeZone: 'Asia/Taipei',
+  })
+
+  const results: Appointment[] = []
+  for (const e of data.items || []) {
+    if (!e.start?.dateTime) continue
+    const parsed = parseSummary(e.summary || '')
+    if (!parsed) continue
+
+    const dt = new Date(e.start.dateTime)
+    const hh = String(dt.getHours()).padStart(2, '0')
+    const mm = String(dt.getMinutes()).padStart(2, '0')
+    results.push({ ...parsed, time: `${hh}:${mm}` })
+  }
+  return results
+}
+
 // ─── 將預約寫入 Google Calendar ──────────────────────────────
 export async function createAppointment(
   date: Date,
