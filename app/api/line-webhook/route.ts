@@ -81,6 +81,18 @@ async function handleText(userId: string, text: string, replyToken: string) {
     return
   }
 
+  // 手動觸發明日預約提醒
+  if (text === '明日預約') {
+    const res = await fetch(`${BASE_URL}/api/reminder`)
+    const data = await res.json()
+    if (data.count === 0) {
+      await reply(replyToken, '明天目前無預約 🙌')
+    } else {
+      await reply(replyToken, `已發送明天 ${data.count} 筆預約提醒 ✅`)
+    }
+    return
+  }
+
   // 圖文選單：預約
   if (text === '預約') {
     setSession(userId, { step: 'AWAITING_APPOINTMENT_TYPE' })
