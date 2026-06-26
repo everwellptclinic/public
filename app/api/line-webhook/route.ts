@@ -98,8 +98,22 @@ async function handleText(userId: string, text: string, replyToken: string) {
       return
     }
 
-    const lines = appointments.map(a => `${a.time}　${a.patient}　${a.therapist}治療師`)
-    await reply(replyToken, `📅 明天 ${dateStr} 共 ${appointments.length} 筆\n\n${lines.join('\n')}`)
+    // 依治療師分組
+    const byTherapist = new Map<string, typeof appointments>()
+    for (const appt of appointments) {
+      if (!byTherapist.has(appt.therapist)) byTherapist.set(appt.therapist, [])
+      byTherapist.get(appt.therapist)!.push(appt)
+    }
+
+    const messages: string[] = []
+    for (const [therapist, appts] of byTherapist) {
+      const lines = appts.map(
+        a => `${a.patient}，提醒您，明天 ${dateStr}${a.time} 在${CLINIC_NAME}有預約喔 😊`
+      )
+      messages.push(`${therapist}物理治療師\n\n${lines.join('\n')}`)
+    }
+
+    await replyMessages(replyToken, messages.map(textMessage))
     return
   }
 
