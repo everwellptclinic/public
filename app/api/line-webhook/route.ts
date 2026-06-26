@@ -100,10 +100,10 @@ async function handleText(userId: string, text: string, replyToken: string) {
 
     const messages: string[] = []
     for (const [therapist, appts] of byTherapist) {
-      const lines = appts.map(
-        a => `${a.patient}，提醒您，明天 ${dateStr}${a.time} 在${CLINIC_NAME}有預約喔 😊`
+      const blocks = appts.map(
+        a => `${a.patient}\n提醒您，明天 ${dateStr}${a.time} 在${CLINIC_NAME}有預約喔 😊`
       )
-      messages.push(`${therapist}物理治療師\n\n${lines.join('\n')}`)
+      messages.push(`${therapist}物理治療師\n\n${blocks.join('\n\n')}`)
     }
 
     await replyMessages(replyToken, messages.map(textMessage))

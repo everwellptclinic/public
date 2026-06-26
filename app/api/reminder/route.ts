@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
   // 每筆預約獨立一則訊息，方便管理者長按轉傳給患者
   const messages = appointments.map(
-    a => `${a.therapist}物理治療師\n\n${a.patient}，提醒您，明天 ${dateStr}${a.time} 在${CLINIC_NAME}有預約喔 😊`
+    a => `${a.therapist}物理治療師\n\n${a.patient}\n提醒您，明天 ${dateStr}${a.time} 在${CLINIC_NAME}有預約喔 😊`
   )
 
   // LINE 每次 push 最多 5 則，分批送出

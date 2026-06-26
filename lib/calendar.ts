@@ -155,15 +155,12 @@ export async function getTomorrowAppointments(): Promise<Appointment[]> {
     const parsed = parseSummary(e.summary || '')
     if (!parsed) continue
 
-    // 用 toLocaleString 以台灣時區取得正確時間
+    // 直接以 UTC+8 計算台灣時間（避免 runtime 時區差異）
     const dt = new Date(e.start.dateTime)
-    const timeStr = dt.toLocaleTimeString('zh-TW', {
-      timeZone: 'Asia/Taipei',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    })
-    results.push({ ...parsed, time: timeStr })
+    const tpe = new Date(dt.getTime() + 8 * 60 * 60 * 1000)
+    const hh = String(tpe.getUTCHours()).padStart(2, '0')
+    const mm = String(tpe.getUTCMinutes()).padStart(2, '0')
+    results.push({ ...parsed, time: `${hh}:${mm}` })
   }
   return results
 }
